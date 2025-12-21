@@ -1,0 +1,134 @@
+﻿<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>受災範圍快速查詢</title>
+    <style>
+        body {
+            font-family: "Microsoft JhengHei", sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f4f7f6;
+        }
+        .search-container {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            text-align: center;
+            width: 90%;
+            max-width: 400px;
+        }
+        h2 { color: #333; margin-bottom: 1.5rem; }
+        input {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 1rem;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 16px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+        input:focus { border-color: #007bff; }
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        button:hover { background-color: #0056b3; }
+        
+        /* 結果顯示區域 */
+        #result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            display: none; /* 初始隱藏 */
+            font-weight: bold;
+            line-height: 1.6;
+        }
+        .area-text { color: #0056b3; font-size: 1.2rem; }
+        .village-text { color: #ff0000; font-size: 1.4rem; text-decoration: underline; }
+        .not-found { color: #666; background: #eee; }
+        .found { background: #fff3f3; border: 1px solid #ffcccc; }
+    </style>
+</head>
+<body>
+
+<div class="search-container">
+    <h2>受災範圍查詢系統</h2>
+    <input type="text" id="userInput" placeholder="例如：安樂區七賢里 或 汐止區茄苳里">
+    <button onclick="checkAddress()">立即查詢</button>
+    
+    <div id="result"></div>
+</div>
+
+<script src="addresscodes.js"></script>
+
+<script>
+function checkAddress() {
+    const input = document.getElementById('userInput').value.trim();
+    const resultDiv = document.getElementById('result');
+    
+    if (!input) {
+        alert("請輸入要查詢的內容喔！");
+        return;
+    }
+
+    let foundArea = "";
+    let foundVillage = "";
+    let isMatch = false;
+
+    // 遍歷資料進行比對
+    for (let entry of addressCodes) {
+        // 比對行政區域 (支援輸入「安樂區」或「基隆市安樂區」)
+        if (input.includes(entry.area.replace("基隆市", "").replace("新北市", "")) || input.includes(entry.area)) {
+            // 比對村里
+            for (let v of entry.villages) {
+                if (input.includes(v)) {
+                    isMatch = true;
+                    foundArea = entry.area;
+                    foundVillage = v;
+                    break;
+                }
+            }
+        }
+        if (isMatch) break;
+    }
+
+    // 顯示結果
+    resultDiv.style.display = "block";
+    if (isMatch) {
+        resultDiv.className = "found";
+        resultDiv.innerHTML = `
+            【<span class="area-text">${foundArea}</span> 
+            <span class="village-text">${foundVillage}</span>】<br>
+            是受災範圍喔！請留意說明。
+        `;
+    } else {
+        resultDiv.className = "not-found";
+        resultDiv.innerHTML = "此區域不在受災名單內，若有錯誤請反饋阿谷。";
+    }
+}
+
+// 支援按 Enter 鍵直接查詢
+document.getElementById('userInput').addEventListener('keypress', function (e) {
+    if (e.key === 'Enter') {
+        checkAddress();
+    }
+});
+</script>
+
+</body>
+</html>
