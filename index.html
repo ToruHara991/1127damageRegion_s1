@@ -103,7 +103,7 @@
     <h2>受災範圍查詢</h2>
     
     <div class="input-group">
-        <input type="text" id="userInput" placeholder="請輸入【區】+【里】，例如：安樂區七賢里" autocomplete="off" oninput="toggleClearBtn()">
+        <input type="text" id="userInput" placeholder="請輸入例如: 保長、七賢里、安樂區武崙里" autocomplete="off" oninput="toggleClearBtn()">
         <span class="clear-btn" id="clearBtn" onclick="resetSearch()">✕</span>
     </div>
     
@@ -141,9 +141,20 @@
         this.select();
     });
 
-    function runSearch() {
+function runSearch() {
         const query = inputEl.value.trim();
         if (!query) return;
+
+        // 限制至少要輸入兩個字
+        if (query.length < 2) {
+            resultArea.innerHTML = `
+                <div class="status-box not-found">
+                    請至少輸入兩個字<br>
+                    <small>例如：保長、七賢里、安樂區武崙里</small>
+                </div>
+            `;
+            return;
+        }
 
         let match = null;
 
@@ -152,10 +163,14 @@
             // 檢查是否包含該行政區 (例如輸入 "安樂區" 能對應到 "基隆市安樂區")
             const areaShort = item["行政區域"].replace("基隆市", "").replace("新北市", "");
             
-            if (query.includes(areaShort) || query.includes(item["行政區域"])) {
-                // 在該區域內尋找村里
-                const targetVillage = item["村里"].find(v => query.includes(v));
-                if (targetVillage) {
+            // 先檢查村里名稱（支援只輸入村里名稱，例如：保長、保長里）
+            const targetVillage = item["村里"].find(v => query.includes(v) || v.includes(query));
+            
+            if (targetVillage) {
+                // 如果有指定區域，確認區域是否匹配
+                if (query.includes(areaShort) || query.includes(item["行政區域"]) || 
+                    !query.match(/[區市]/)) {
+                    // 條件：包含完整區域名 OR 包含簡短區域名 OR 沒有提到區/市（純村里查詢）
                     match = { area: item["行政區域"], village: targetVillage };
                     break;
                 }
